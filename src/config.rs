@@ -17,8 +17,19 @@ pub struct AssetConfig {
     pub name: Option<String>,
     /// Asset source path
     pub source: PathBuf,
+    /// File type
+    pub r#type: Option<AssetType>,
     /// Target directory to copy the file to
     pub target_dir: Option<PathBuf>,
+}
+
+/// Asset type
+#[derive(serde::Deserialize)]
+pub enum AssetType {
+    Html,
+    JsScript,
+    JsModule,
+    Css,
 }
 
 impl Config {
