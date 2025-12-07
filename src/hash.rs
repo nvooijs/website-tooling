@@ -1,4 +1,3 @@
-use crate::fs::File;
 use core::fmt;
 use sha3::digest::{ExtendableOutput, Update};
 use std::io::Read;
@@ -10,16 +9,14 @@ type Hasher = sha3::TurboShake128;
 pub struct ShortHash([u8; 6]);
 
 impl ShortHash {
-    pub fn from_file(mut file: &File) -> Self {
+    pub fn from_bytes(bytes: &[u8]) -> Self {
         let mut hasher = {
             let core = sha3::TurboShake128Core::new(HASH_BYTES as u8);
             Hasher::from_core(core)
         };
 
         {
-            let mut buf = Vec::new();
-            file.read_to_end(&mut buf).expect("Couldn't read from file");
-            hasher.update(buf.as_ref());
+            hasher.update(bytes);
         }
 
         let mut hash = [0_u8; HASH_BYTES];

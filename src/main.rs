@@ -8,10 +8,14 @@ mod fs;
 mod cli;
 mod config;
 mod hash;
+mod js;
 
+use crate::config::AssetType;
 use crate::path::*;
 use anyhow::{Context, anyhow};
+
 use std::collections::HashMap;
+use std::io::Write;
 
 fn open_root_dir(dir: Option<&Path>) -> Result<fs::Dir> {
     let aa = cap_std::ambient_authority();
@@ -33,10 +37,22 @@ fn program() -> Result<()> {
     for asset in config.assets.iter() {
         let source: &Path = asset.source.as_ref();
 
-        let hash = {
-            let file = root.open(source)?;
-            hash::ShortHash::from_file(&file)
+        let content = {
+            let mut file = root.open(source)?;
+            if let Some(ty) = asset.r#type {
+                let source = fs::read_file_str(&mut file)?;
+                match ty {
+                    AssetType::JsModule => js::minify(source.as_ref(), js::JsType::JsModule),
+                    AssetType::JsScript => js::minify(source.as_ref(), js::JsType::JsScript),
+                    _ => Ok(source),
+                }?
+                .into_bytes()
+            } else {
+                fs::read_file_bytes(&mut file)?
+            }
         };
+
+        let hash = hash::ShortHash::from_bytes(content.as_ref());
 
         let out_dir = if let Some(p) = config.out_dir.as_ref() {
             root.create_dir_all(p)?;
@@ -60,8 +76,11 @@ fn program() -> Result<()> {
         };
         target.push(target_name);
 
-        fs::copy(&root, source, &out_dir, target.as_ref())
-            .context("copying asset to destination")?;
+        let mut out_file =
+            fs::create(&out_dir, target.as_ref()).context("creating asset output file")?;
+        out_file
+            .write(content.as_ref())
+            .context("writing asset output file")?;
 
         mapping.insert(name, target.to_string());
     }

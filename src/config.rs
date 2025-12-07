@@ -2,7 +2,7 @@ use crate::Result;
 use crate::fs::Dir;
 use crate::path::{Path, PathBuf};
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct Config {
     /// Directory to output assets
     pub out_dir: Option<PathBuf>,
@@ -11,7 +11,7 @@ pub struct Config {
 }
 
 /// Configuration for a specific asset
-#[derive(serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub struct AssetConfig {
     /// Asset name, source path name if `None`
     pub name: Option<String>,
@@ -24,7 +24,8 @@ pub struct AssetConfig {
 }
 
 /// Asset type
-#[derive(serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum AssetType {
     Html,
     JsScript,
